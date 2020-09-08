@@ -17,9 +17,9 @@ class MLP(nn.Module):
     '''
     def __init__(self,nb_layer=1,nb_hidden_neuron=50):
         super(MLP, self).__init__()
-        self.fc_begin = nn.Linear(392 ,nb_hidden_neuron)
-        self.fc_hidden=nn.Linear(nb_hidden_neuron ,nb_hidden_neuron)
-        self.fc_last = nn.Linear(nb_hidden_neuron, 2)
+        self.fc_1 = nn.Linear(392 ,nb_hidden_neuron)
+        self.fc_2 = nn.Linear(nb_hidden_neuron ,nb_hidden_neuron)
+        self.fc_3 = nn.Linear(nb_hidden_neuron, 2)
         
         self.fc_one_layer=nn.Linear(392 ,2)
         self.nb_layer=nb_layer
@@ -29,11 +29,10 @@ class MLP(nn.Module):
         if self.nb_layer==1:
             x=self.fc_one_layer(x)
         else:
-            # build number of linear layers according to input layer number
-            x = F.relu(self.fc_begin(x))
-            for i in range(self.nb_layer-2):
-                x = F.relu(self.fc_hidden(x))
-            x = self.fc_last(x)
+            # build 3 linear layers according to input layer number
+            x = F.relu(self.fc_1(x))
+            x = F.relu(self.fc_2(x))
+            x = self.fc_3(x)
         return x
     
     def predict(self, x):
@@ -84,12 +83,15 @@ class ConvNet_1(nn.Module):
             
         x=F.max_pool2d(x, kernel_size=2, stride=2)
         
-        x = F.dropout(x, p=self.dropout,training=self.training)
-        
-        
+        if self.dropout>0:
+            x = F.dropout(x, p=self.dropout,training=self.training)
+   
         x=x.view(x.size(0),-1)
+        
         x=self.fc1(x)
         x=F.relu(x)
+        if self.dropout>0:
+            x = F.dropout(x, p=self.dropout,training=self.training)
         x = self.fc2(x)
     
         return x
@@ -124,6 +126,7 @@ class ConvNet_2(nn.Module):
         self.bn=bn
         self.activation=activation
         self.dropout=dropout
+        
     def forward(self, x):
         x=self.conv1(x)
         if self.activation=='sigmoid':
@@ -134,6 +137,9 @@ class ConvNet_2(nn.Module):
         if self.bn:
             x=self.bn8(x)
             
+        if self.dropout>0:
+            x = F.dropout(x, p=self.dropout,training=self.training)
+            
         x=self.conv2(x)
         if self.activation=='sigmoid':
             x=F.sigmoid(x)
@@ -142,12 +148,11 @@ class ConvNet_2(nn.Module):
         if self.bn:
             x=self.bn16(x)
         
-        x = F.dropout(x, p=self.dropout,training=self.training)
+        if self.dropout>0:
+            x = F.dropout(x, p=self.dropout,training=self.training)
          
         x=F.max_pool2d(x, kernel_size=2, stride=2)
-        
-        
-        
+          
         
         x=x.view(x.size(0),-1)
         x=self.fc1(x)
@@ -175,16 +180,14 @@ class DeepNet(nn.Module):
         self.conv4 = nn.Conv2d(16, 16, kernel_size=3, padding=1)
         self.conv5 = nn.Conv2d(16, 16, kernel_size=3, padding=1)
         self.conv6 = nn.Conv2d(16, 16, kernel_size=3, padding=1)
-        self.conv7 = nn.Conv2d(16, 16, kernel_size=3, padding=1)
-        self.conv8 = nn.Conv2d(16, 16, kernel_size=3, padding=1)
+
         self.fc1 = nn.Linear(16*6*6 ,64)
         self.fc2 = nn.Linear(64, 2)
         self.bn1=torch.nn.BatchNorm2d(16)
         self.bn2=torch.nn.BatchNorm2d(16)
         self.bn3=torch.nn.BatchNorm2d(16)
-        self.bn4=torch.nn.BatchNorm2d(16)
-        self.bn5=torch.nn.BatchNorm2d(16)
-        self.bn6=torch.nn.BatchNorm2d(16)
+
+
         
 
     def forward(self, x):
@@ -194,11 +197,11 @@ class DeepNet(nn.Module):
         x=F.relu(x)
         x=F.max_pool2d(x, kernel_size=2, stride=2)
         
+        x=self.bn1(x)
         
-        # after this, build 6 same convolution layers
+        # after this, build 4  convolution layers
         x=self.conv3(x)
         x=F.relu(x)
-        x=self.bn1(x)
         
         x=self.conv4(x)
         x=F.relu(x)
@@ -206,20 +209,10 @@ class DeepNet(nn.Module):
         
         x=self.conv5(x)
         x=F.relu(x)
-        x=self.bn3(x)
         
         x=self.conv6(x)
         x=F.relu(x)
-        x=self.bn4(x)
-        
-        x=self.conv7(x)
-        x=F.relu(x)
-        x=self.bn5(x)
-        
-        x=self.conv8(x)
-        x=F.relu(x)
-        x=self.bn6(x)
-        
+        x=self.bn3(x)
         
         x=x.view(x.size(0),-1)
         x=self.fc1(x)
@@ -231,7 +224,7 @@ class DeepNet(nn.Module):
     def predict(self, x):
         logits = self.forward(x)
         return F.softmax(logits)
-    
+        
     
 
     
@@ -240,7 +233,7 @@ class DeepNet_Res(nn.Module):
     define Deeper CNN model with residual block
    
     '''
-    def __init__(self):
+    def __init__(self,dropout=0.3):
         super(DeepNet_Res, self).__init__()
         self.conv1 = nn.Conv2d(2, 8, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(8, 16, kernel_size=3)
@@ -250,19 +243,19 @@ class DeepNet_Res(nn.Module):
         self.conv4 = nn.Conv2d(16, 16, kernel_size=3, padding=1)
         self.conv5 = nn.Conv2d(16, 16, kernel_size=3, padding=1)
         self.conv6 = nn.Conv2d(16, 16, kernel_size=3, padding=1)
-        self.conv7 = nn.Conv2d(16, 16, kernel_size=3, padding=1)
-        self.conv8 = nn.Conv2d(16, 16, kernel_size=3, padding=1)
+
         self.bn1=torch.nn.BatchNorm2d(16)
         self.bn2=torch.nn.BatchNorm2d(16)
         self.bn3=torch.nn.BatchNorm2d(16)
-        self.bn4=torch.nn.BatchNorm2d(16)
-        self.bn5=torch.nn.BatchNorm2d(16)
-        self.bn6=torch.nn.BatchNorm2d(16)
+        
+        self.dropout=dropout
+
     def forward(self, x):
         x=self.conv1(x)
         x=F.relu(x)
         x=self.conv2(x)
         x=F.relu(x)
+        x=self.bn1(x)
         x=F.max_pool2d(x, kernel_size=2, stride=2)
         
 
@@ -271,39 +264,31 @@ class DeepNet_Res(nn.Module):
         # after this, build 6 same convolution layers
         x=self.conv3(x)
         x=F.relu(x)
-        x=self.bn1(x)
         
         x=self.conv4(x)
         x=F.relu(x)
         x=self.bn2(x)
-        
-        x=self.conv5(x)
-        x=F.relu(x)
-        x=self.bn3(x)
         
         # residual operation
         x=x1+x
         # for later residual operation
         x2=x
         
+        x=self.conv5(x)
+        x=F.relu(x)
+        
         x=self.conv6(x)
         x=F.relu(x)
-        x=self.bn4(x)
-        
-        x=self.conv7(x)
-        x=F.relu(x)
-        x=self.bn5(x)
-        
-        x=self.conv8(x)
-        x=F.relu(x)
-        x=self.bn6(x)
+        x=self.bn3(x)
         
         #  residual operation
         x=x2+x
        
         x=x.view(x.size(0),-1)
         x=self.fc1(x)
-        x=F.relu(x)    
+        if self.dropout>0:
+            x = F.dropout(x, p=self.dropout,training=self.training)
+        x=F.relu(x)
         x = self.fc2(x)
     
         return x
@@ -311,10 +296,6 @@ class DeepNet_Res(nn.Module):
     def predict(self, x):
         logits = self.forward(x)
         return F.softmax(logits)
-
-    
-    
-    
 
     
     
@@ -348,9 +329,12 @@ class ConvNet_WS(nn.Module):
         # x: feature map for later binary classification
         temp_x=self.conv1(temp_x)
         temp_x=F.relu(temp_x) 
+        temp_x=self.bn8(temp_x)
+         
         
         temp_x=self.conv2(temp_x)
         temp_x=F.relu(temp_x)
+        temp_x=self.bn16(temp_x)
         
         temp_x=F.max_pool2d(temp_x, kernel_size=2, stride=2)
         
@@ -391,7 +375,7 @@ class CNN_digit(nn.Module):
     activation: choice of activation function, default as Relu
  
     '''
-    def __init__(self, bn=False, dropout=0, activation='relu' ):
+    def __init__(self, dropout=0.2):
         super(CNN_digit, self).__init__()
         self.conv1 = nn.Conv2d(1, 8, kernel_size=3,padding=1)
         self.conv2 = nn.Conv2d(8, 16, kernel_size=3)
@@ -400,34 +384,22 @@ class CNN_digit(nn.Module):
         self.bn8 = torch.nn.BatchNorm2d(8)
         self.bn16 = torch.nn.BatchNorm2d(16)
         self.bn32 = torch.nn.BatchNorm2d(32)
-        self.bn=bn
-        self.activation=activation
         self.dropout=dropout
+        
     def forward(self, x):
         x=x.view(x.size(0),1,14,14)
         x=self.conv1(x)
-        if self.activation=='sigmoid':
-            x=F.sigmoid(x)
-        else:
-            x=F.relu(x)
-            
-        if self.bn:
-            x=self.bn8(x)
+
+        x=F.relu(x)
+        x=self.bn8(x)
             
         x=self.conv2(x)
-        if self.activation=='sigmoid':
-            x=F.sigmoid(x)
-        else:
-            x=F.relu(x)
-        if self.bn:
-            x=self.bn16(x)
+        x=F.relu(x)
+        x=self.bn16(x)
         
         x = F.dropout(x, p=self.dropout,training=self.training)
          
-        x=F.max_pool2d(x, kernel_size=2, stride=2)
-        
-        
-        
+        x=F.max_pool2d(x, kernel_size=2, stride=2)    
         
         x=x.view(x.size(0),-1)
         x=self.fc1(x)

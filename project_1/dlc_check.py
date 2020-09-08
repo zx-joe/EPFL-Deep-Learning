@@ -17,4 +17,5 @@ images = train_input.narrow(0, 0, 64).view(-1, 3, 32, 32)
 images /= images.max()
 
 print('Writing check-cifar.png')
-torchvision.utils.save_image(images, 'check-cifar.png')
+torchvision.utils.save_image(images, 'check-cifar.png') 
+

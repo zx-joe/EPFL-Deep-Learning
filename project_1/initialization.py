@@ -18,7 +18,7 @@ def data_init(train_input,train_target, train_class, num=1000):
     new_train_target=train_target[index]
     new_train_class=train_class[index,:]
     
-    return new_train_input,new_train_target,  new_train_class
+    return new_train_input,new_train_target, new_train_class
 
 def weights_init(m):
     # initialization of weights in convolution and linear layer

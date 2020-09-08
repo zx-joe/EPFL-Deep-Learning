@@ -13,9 +13,10 @@ warnings.filterwarnings('ignore')
 def train_model(model , 
                 train_input, train_target, 
                 test_input, test_target,
-                optim='sgd',
+                optim='SGD',
                 epochs=50, batch_size=100, learning_rate=1e-3, momentum=0,
                  if_print=False):
+    
     '''
     define training process of basic model (MLP, basic CNN)
     
@@ -29,15 +30,16 @@ def train_model(model ,
     model: model after training
     train_loss_list,train_accuracy_list: list of loss and accuracy history of training set after each epoch
     test_loss_list,test_accuracy_list: list of loss and accuracy history of testing set after each epoch
-  
     '''
+  
+    
     #use cross entropy loss
     criterion = nn.CrossEntropyLoss()
     # choose optimizer (sgd or adam) with learning rate and momentum by input
-    if optim=='sgd':
+    if optim=='SGD':
         optimizer = torch.optim.SGD(model.parameters(),lr=learning_rate,momentum=momentum)
-    elif optim=='adam':
-        optimizer = torch.optim.ADAM(model.parameters(),lr=learning_rate,momentum=momentum)
+    elif optim=='Adam':
+        optimizer = torch.optim.Adam(model.parameters(),lr=learning_rate)
     # initialize output lists
     train_loss_list=train_accuracy_list=[]
     valid_loss_list=valid_accuracy_list=[]
@@ -98,10 +100,12 @@ def train_model(model ,
 def train_model_WS(model , 
                 train_input, train_target, train_class,
                 test_input, test_target, test_class,
-                optim='sgd', if_auxiliary_loss=False,auxiliary_loss_ratio=1,
-                epochs=50, batch_size=100, learning_rate=1e-3,
+                optim='SGD', if_auxiliary_loss=False,auxiliary_loss_ratio=1,
+                epochs=50, batch_size=100, learning_rate=1e-2, decay=True,
                  if_print=False):
+    
     '''
+    
     define training process of model combined with digit information
     
     input: 
@@ -112,6 +116,7 @@ def train_model_WS(model ,
     if_print: if we want to print the accuracy and loss of data set in each epoch
     other input: hypaerparameters to be tuned, all has a default value
     auxiliary_loss_ratio: ratios of auxiliary loss wrt original loss
+    decay: whether to give a decay of weights of 10-digit classification through epochs
     output:
     model: model after training
     train_loss_list,train_accuracy_list: list of loss and accuracy history of training set after each epoch
@@ -121,10 +126,10 @@ def train_model_WS(model ,
     #use cross entropy loss
     criterion = nn.CrossEntropyLoss()
     # choose optimizer (sgd or adam) with learning rate and momentum by input
-    if optim=='sgd':
+    if optim=='SGD':
         optimizer = torch.optim.SGD(model.parameters(),lr=learning_rate)
-    elif optim=='adam':
-        optimizer = torch.optim.ADAM(model.parameters(),lr=learning_rate)
+    elif optim=='Adam':
+        optimizer = torch.optim.Adam(model.parameters())
     # initialize output lists
     train_loss_list=train_accuracy_list=[]
     valid_loss_list=valid_accuracy_list=[]
@@ -148,8 +153,12 @@ def train_model_WS(model ,
             auxiliary_loss=auxiliary_loss_1+auxiliary_loss_ratio*auxiliary_loss_2
             # if input if_auxiliary_loss is True, we use combinatoin of loss and auxiliary loss
             if if_auxiliary_loss:
-                # a weight decay
-                temp_weight=(epochs-e)/epochs
+                if decay:
+                    # a weight decay
+                    temp_weight=(epochs-e)/epochs
+                else:
+                    # no decay
+                    temp_weight=1.
                 # combined loss
                 loss=loss+auxiliary_loss*auxiliary_loss_ratio*temp_weight
                 
@@ -195,9 +204,10 @@ def train_model_WS(model ,
 def train_by_digit(model , 
                 train_input, train_target, train_class,
                 test_input, test_target, test_class,
-                optim='sgd',
+                optim='SGD',
                 epochs=50, batch_size=100, learning_rate=1e-3, momentum=0,
                  if_print=False):
+    
     '''
     define training process of model trained directly on digit class
     
@@ -219,10 +229,10 @@ def train_by_digit(model ,
     #use cross entropy loss
     criterion = nn.CrossEntropyLoss()
     # choose optimizer (sgd or adam) with learning rate and momentum by input
-    if optim=='sgd':
+    if optim=='SGD':
         optimizer = torch.optim.SGD(model.parameters(),lr=learning_rate,momentum=momentum)
-    elif optim=='adam':
-        optimizer = torch.optim.ADAM(model.parameters(),lr=learning_rate, momentum=momentum)
+    elif optim=='Adam':
+        optimizer = torch.optim.Adam(model.parameters(),lr=learning_rate)
     # initialize output lists
     test_accuracy_list=train_accuracy_list=[]
     digit_train_accuracy_list=digit_test_accuracy_list=[]
